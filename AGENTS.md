@@ -77,6 +77,20 @@ flutter run --release -d <deviceId>  # find id via `flutter devices`
 flutter build apk --release          # -> build/app/outputs/flutter-apk/app-release.apk
 ```
 
+Cross-platform reality on this Windows dev box: Android + web + Windows build
+locally (Windows needs Developer Mode for plugin symlinks —
+`start ms-settings:developers`). **Linux and iOS cannot build on Windows** — they
+run only in CI (Linux host + GTK; macOS + Xcode). Don't try to build them here.
+
+## CI / releases
+
+`.github/workflows/`: `ci.yml` (analyze + test on push/PR to main) and
+`release.yml` (on a `v*` tag or manual dispatch — builds Android APK+AAB,
+Windows zip, Linux tar.gz, iOS unsigned .ipa, then publishes a GitHub Release
+via `softprops/action-gh-release`). Flutter is pinned to 3.44.6. Android is
+debug-signed and iOS unsigned in CI; store builds need signing secrets. The
+GitHub remote is `github.com/amuletgrey/ClassicLinesInFlutter`.
+
 ## Identity & release config
 
 - **Display name:** `Classic Lines` (all platforms).

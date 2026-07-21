@@ -104,10 +104,40 @@ flutter build apk --release    # release APK -> build/app/outputs/flutter-apk/
   flutter build appbundle --release                          # -> .aab for Play
   ```
 
-### Windows build note
+## Continuous integration & releases
 
-`android/gradle.properties` sets `kotlin.incremental=false`. When the pub cache
-(`C:\…\Pub\Cache`) and the project live on **different drives**, Kotlin's
-incremental compiler crashes trying to relativize plugin source paths across the
-two roots (`this and base files have different roots`). Disabling incremental
-Kotlin compilation avoids it. Not needed on single-drive setups, but harmless.
+GitHub Actions workflows in `.github/workflows/`:
+
+- **`ci.yml`** — runs `flutter analyze` + `flutter test` on every push/PR to `main`.
+- **`release.yml`** — on a version tag (or manual dispatch) builds every platform
+  and publishes a GitHub Release with the artifacts:
+
+  ```sh
+  git tag v1.0.0
+  git push origin v1.0.0
+  ```
+
+  | Platform | Runner         | Artifact                        |
+  |----------|----------------|---------------------------------|
+  | Android  | ubuntu-latest  | `app-release.apk`, `.aab`       |
+  | Windows  | windows-latest | `ClassicLines-windows-x64.zip`  |
+  | Linux    | ubuntu-latest  | `ClassicLines-linux-x64.tar.gz` |
+  | iOS      | macos-latest   | `ClassicLines-ios-unsigned.ipa` |
+
+  The Android artifact is debug-signed and the iOS one is unsigned — store-ready
+  builds need signing (add an Android keystore via secrets, and Apple signing
+  certs/provisioning for iOS). Bump `version:` in `pubspec.yaml` per release.
+
+## Platform build notes
+
+- **Android** — `android/gradle.properties` sets `kotlin.incremental=false`.
+  When the pub cache (`C:\…\Pub\Cache`) and the project live on **different
+  drives**, Kotlin's incremental compiler crashes relativizing plugin source
+  paths across the two roots (`this and base files have different roots`).
+  Harmless on single-drive setups.
+- **Windows** — `flutter build windows --release` needs **Developer Mode**
+  enabled (for plugin symlinks): `start ms-settings:developers`. CI runners
+  already have it.
+- **Linux / iOS** — can't be built on Windows. Linux needs a Linux host with GTK
+  (`ninja-build libgtk-3-dev clang cmake pkg-config`); iOS needs macOS + Xcode.
+  Both are produced by CI (`release.yml`).
