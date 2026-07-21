@@ -1,0 +1,107 @@
+# AGENTS.md
+
+Guidance for AI agents and developers working on this repo. See `README.md` for
+the player-facing description and full rules.
+
+## What this is
+
+**Classic Lines** — the '98 color-lines game, rebuilt in Flutter. Primary target
+is **Android**; the code is kept multiplatform (iOS / web / desktop all build).
+A prior Unity implementation lives at `../ClassicLinesGame` and is the source of
+the palette, the shaded-ball look, the BFS pathfinding and the line rules. When
+porting more from it, read `../ClassicLinesGame/Assets/Scripts/Board.cs` and
+`Art.cs`.
+
+## Stack
+
+- Flutter 3.44.6 (stable), Dart 3.12.2.
+- Packages: `shared_preferences` (high scores + mute), `audioplayers` (SFX).
+- State: plain `StatefulWidget` + `setState` (no state-management package). The
+  board is small; full rebuilds are cheap and the board Stack is wrapped in a
+  single `AnimatedBuilder` so only it repaints during animations.
+
+## Architecture
+
+```
+lib/board.dart        Pure rules — no Flutter. Grid, BFS pathfinding, line
+                      detection, scoring, and snapshot()/restore() for undo.
+lib/game_screen.dart  All UI + orchestration: rendering, input, the move/spawn/
+                      clear/pulse/popup animations, controls, persistence, audio.
+lib/ball.dart         The shaded ball (radial gradient lit from upper-left).
+lib/palette.dart      Flat dark palette + the 7 ball colors (index 1..7).
+lib/sfx.dart          Mute-aware SFX player; one low-latency AudioPlayer per sound.
+lib/main.dart         App entry, dark theme, portrait lock.
+tool/gen_sounds.py    Synthesizes assets/sounds/*.wav (pure-Python, no numpy).
+test/board_test.dart  Headless rule tests.
+```
+
+Rendering model: the board is a `Stack` of absolutely-`Positioned` layers —
+cell backgrounds, next-drop hint dots, settled balls, the sliding-ball overlay,
+transparent tap targets, then the game-over veil. Cell size is derived from a
+`LayoutBuilder` inside a square `AspectRatio`. Grid coord is `Point<int>`
+(`typedef Cell`), `(x=col, y=row)`, row 0 at the top.
+
+Turn flow (`_handleMove`): snapshot for undo → animate slide → commit move →
+if it forms a line, clear + score (free turn); else drop 3 balls, then clear any
+line the drop completed. A clearing move does **not** spawn.
+
+## Rules that must not drift
+
+- Scoring: `8 + (len − 4) × 2`, base len 4 in **both** modes ⇒ 5-in-a-row = 10,
+  6 = 12, … Locked by `test/board_test.dart`.
+- Mode = clear threshold: Easy 4-in-line, Normal 5-in-line.
+- Four independent high scores, keyed `hi_{easy|normal}_{9|10}`.
+
+## Build / run / test
+
+```sh
+flutter pub get
+flutter test                         # rule tests (should be all green)
+flutter analyze                      # must be clean
+flutter run --release -d <deviceId>  # find id via `flutter devices`
+flutter build apk --release          # -> build/app/outputs/flutter-apk/app-release.apk
+```
+
+Release APK is debug-signed by default (fine for sideloading; set up a real
+signing config before any store release).
+
+### Windows build gotcha (important)
+
+`android/gradle.properties` sets **`kotlin.incremental=false`**. When the pub
+cache (`C:\…\Pub\Cache`) and the project sit on **different drives**, Kotlin's
+incremental compiler crashes relativizing plugin source paths across roots
+(`this and base files have different roots`), failing any plugin's
+`compile*Kotlin` task. Do **not** remove that flag on this machine. Every native
+plugin (`shared_preferences`, `audioplayers`) is affected without it.
+
+## Regenerating sounds
+
+```sh
+OUT_DIR=assets/sounds python tool/gen_sounds.py
+```
+
+Edit frequencies/durations in `tool/gen_sounds.py`. Sounds are committed WAVs;
+there is no imported/copyrighted audio.
+
+## Verifying UI changes
+
+- On a device/emulator: `flutter run` and look. Best signal.
+- Headless screenshots of Flutter **web** hang (CanvasKit's WebGL canvas doesn't
+  capture) — don't rely on browser-pane screenshots to verify the Flutter UI.
+- The debug web-server (`flutter run -d web-server`) may fail its `dwds` debug
+  handshake and never mount the app; use a **release** web build served
+  statically if you need the web target in a browser.
+
+## Conventions
+
+- Keep `flutter analyze` clean (flutter_lints; braces on all flow control).
+- Keep game rules in `board.dart` pure and covered by `board_test.dart`; the
+  widget layer holds no rule logic.
+- Match existing comment density and naming; comments explain *why*.
+
+## Not done yet / ideas
+
+- No custom launcher icon or app display name yet (still "classic_lines").
+- No release signing config.
+- Possible polish: spawn "drop" tick, score-clear particles, an undo that
+  refuses to claw back a scoring move (current undo is a full rollback).

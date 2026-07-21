@@ -1,2 +1,81 @@
-# ClassicLinesInFlutter
-The Classic lines game, but in Flutter
+# Classic Lines (Flutter)
+
+The classic "Lines" game from '98, rebuilt in Flutter for Android with a
+multiplatform release in mind (the same code runs on iOS, web, and desktop).
+
+The rules and controls follow the original; the look is a plain, modern flat
+dark theme rather than a recreation of the '98 skin. It shares its palette and
+ball design with the Unity build in `../ClassicLinesGame`.
+
+## Rules
+
+- A square grid (9×9 or 10×10) with 7 ball colors.
+- Tap a ball to select it, then tap a free cell to move it there.
+- A ball only moves if a path of empty cells connects the two (4-directional,
+  no diagonal steps). The move animates along that path.
+- Enough of one color in a row, column, or diagonal clears and scores. The
+  threshold is the **mode**: 4 in a line (Easy) or 5 in a line (Normal).
+- Scoring is progressive: `8 + (len − 4) × 2` points, using an absolute base of
+  4 in both modes — so a given line is worth the same either way (4 → 8,
+  5 → 10, 6 → 12, …).
+- A move that clears a line scores and grants a free turn; a move that clears
+  nothing drops 3 new balls, whose colors and target cells are previewed (the
+  NEXT row and the faint dots on the board). Freshly dropped balls can complete
+  lines too.
+- The game ends when the board fills up.
+
+## Sound
+
+Short synthesized blips play on select, move, line-clear, and game over. The
+speaker icon under `NEXT` mutes/unmutes (persisted). The `.wav` files in
+`assets/sounds/` are generated — no imported audio — by `tool/gen_sounds.py`:
+
+```sh
+OUT_DIR=assets/sounds python tool/gen_sounds.py
+```
+
+## Undo
+
+The `↶` button under `NEXT` rolls back the last move and everything it triggered
+(spawns and clears), restoring the exact board and score. It is single-use: it
+disables after one undo, until the next move.
+
+## Settings & high scores
+
+Two controls sit next to **New game**:
+
+- **Mode** — Easy (4-in-line) / Normal (5-in-line)
+- **Board** — 9×9 / 10×10
+
+Changing either starts a fresh game in that configuration. Each of the four
+combinations keeps its own high score (persisted with `shared_preferences`).
+
+## Layout
+
+```
+lib/board.dart        rules: grid, BFS pathfinding, line detection, scoring, undo snapshot (pure Dart)
+lib/game_screen.dart  the game UI: board rendering, input, animations, controls, storage
+lib/ball.dart         the shaded ball (radial gradient, lit from upper-left)
+lib/palette.dart      the flat dark palette and the 7 ball colors
+lib/sfx.dart          sound-effect player (bundled WAVs, mute-aware)
+lib/main.dart         app entry, theme, portrait lock
+tool/gen_sounds.py    synthesizes the sound effects into assets/sounds/
+test/board_test.dart  headless checks of the rules (scoring, detection, pathfinding, undo)
+```
+
+## Running
+
+```sh
+flutter pub get
+flutter run -d <device>        # e.g. an attached Android phone
+flutter test                   # rule tests
+flutter build apk --release    # release APK -> build/app/outputs/flutter-apk/
+```
+
+### Windows build note
+
+`android/gradle.properties` sets `kotlin.incremental=false`. When the pub cache
+(`C:\…\Pub\Cache`) and the project live on **different drives**, Kotlin's
+incremental compiler crashes trying to relativize plugin source paths across the
+two roots (`this and base files have different roots`). Disabling incremental
+Kotlin compilation avoids it. Not needed on single-drive setups, but harmless.
