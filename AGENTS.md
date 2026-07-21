@@ -30,7 +30,7 @@ lib/game_screen.dart  All UI + orchestration: rendering, input, the move/spawn/
 lib/ball.dart         The shaded ball (radial gradient lit from upper-left).
 lib/palette.dart      Flat dark palette + the 7 ball colors (index 1..7).
 lib/sfx.dart          Mute-aware SFX player; one low-latency AudioPlayer per sound.
-lib/main.dart         App entry, dark theme, portrait lock.
+lib/main.dart         App entry, dark theme, all orientations enabled.
 tool/gen_sounds.py    Synthesizes assets/sounds/*.wav (pure-Python, no numpy).
 test/board_test.dart  Headless rule tests.
 ```
@@ -40,6 +40,11 @@ cell backgrounds, next-drop hint dots, settled balls, the sliding-ball overlay,
 transparent tap targets, then the game-over veil. Cell size is derived from a
 `LayoutBuilder` inside a square `AspectRatio`. Grid coord is `Point<int>`
 (`typedef Cell`), `(x=col, y=row)`, row 0 at the top.
+
+Responsive: a top-level `LayoutBuilder` picks `_tallLayout` (portrait/narrow —
+header, board, controls stacked, capped at 560 wide) or `_wideLayout`
+(landscape/large — board square on the left, header+controls in a side panel).
+All orientations are enabled so tablets aren't letterboxed.
 
 Turn flow (`_handleMove`): snapshot for undo → animate slide → commit move →
 if it forms a line, clear + score (free turn); else drop 3 balls, then clear any

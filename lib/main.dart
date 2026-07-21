@@ -6,10 +6,14 @@ import 'palette.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // Portrait on phones; ignored on desktop/web.
-  SystemChrome.setPreferredOrientations(
-    [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown],
-  );
+  // Allow every orientation; the UI adapts to portrait vs. landscape (and to
+  // large screens) so tablets aren't letterboxed. Ignored on desktop/web.
+  SystemChrome.setPreferredOrientations(const [
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
   runApp(const ClassicLinesApp());
 }
 

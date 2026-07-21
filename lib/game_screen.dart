@@ -272,23 +272,66 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: Palette.background,
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _header(),
-                  const SizedBox(height: 14),
-                  Expanded(child: Center(child: _boardPanel())),
-                  const SizedBox(height: 14),
-                  _controls(),
-                ],
-              ),
-            ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Go side-by-side once there is clearly more width than height —
+              // landscape phones and tablets — otherwise stack vertically.
+              final wide = constraints.maxWidth > constraints.maxHeight * 1.15;
+              return wide ? _wideLayout(constraints) : _tallLayout();
+            },
           ),
         ),
+      ),
+    );
+  }
+
+  /// Portrait / narrow: header on top, board filling the middle, controls below.
+  Widget _tallLayout() {
+    return Center(
+      child: ConstrainedBox(
+        // Phones are narrower than this, so they fill their width; tablets get a
+        // larger board instead of a small 480-wide one lost in whitespace.
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: Column(
+          children: [
+            _header(),
+            const SizedBox(height: 14),
+            Expanded(child: Center(child: _boardPanel())),
+            const SizedBox(height: 14),
+            _controls(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Landscape / large screens: the board takes a square on the left, with the
+  /// header and controls in a side panel on the right (no letterboxing).
+  Widget _wideLayout(BoxConstraints c) {
+    const gap = 24.0;
+    final panelWidth = (c.maxWidth * 0.34).clamp(240.0, 400.0);
+    final boardSide = min(c.maxHeight, c.maxWidth - panelWidth - gap);
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(width: boardSide, height: boardSide, child: _boardPanel()),
+          const SizedBox(width: gap),
+          SizedBox(
+            width: panelWidth,
+            height: boardSide,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _header(),
+                const Spacer(),
+                _controls(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

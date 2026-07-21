@@ -58,7 +58,7 @@ lib/game_screen.dart  the game UI: board rendering, input, animations, controls,
 lib/ball.dart         the shaded ball (radial gradient, lit from upper-left)
 lib/palette.dart      the flat dark palette and the 7 ball colors
 lib/sfx.dart          sound-effect player (bundled WAVs, mute-aware)
-lib/main.dart         app entry, theme, portrait lock
+lib/main.dart         app entry, theme, orientation (portrait + landscape)
 tool/gen_sounds.py    synthesizes the sound effects into assets/sounds/
 test/board_test.dart  headless checks of the rules (scoring, detection, pathfinding, undo)
 ```
