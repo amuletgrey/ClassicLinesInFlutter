@@ -121,3 +121,8 @@ app.*.symbols
 # IDE / editor
 .idea/
 *.iml
+
+# Android release signing secrets (never commit)
+android/key.properties
+*.jks
+*.keystore

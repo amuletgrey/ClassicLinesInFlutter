@@ -62,8 +62,44 @@ flutter run --release -d <deviceId>  # find id via `flutter devices`
 flutter build apk --release          # -> build/app/outputs/flutter-apk/app-release.apk
 ```
 
-Release APK is debug-signed by default (fine for sideloading; set up a real
-signing config before any store release).
+## Identity & release config
+
+- **Display name:** `Classic Lines` (all platforms).
+- **Application ID / bundle id:** `com.classicdeveloper.classiclines` — set on
+  Android (`applicationId`), iOS/macOS (bundle id), Linux (`APPLICATION_ID`). The
+  Android `namespace` deliberately stays `com.classiclines.classic_lines` (it's
+  the R-class package and can differ from the applicationId; changing it would
+  mean moving `MainActivity.kt`). Owner: classicdeveloper18@gmail.com.
+- **Version:** `pubspec.yaml` `version:` → `versionName+versionCode`.
+
+### Launcher icon
+
+Source art (a diagonal line of shaded balls on the dark board bg) is generated
+by `tool/gen_icon.py` into `assets/icon/{icon,icon_foreground}.png` (source only,
+not bundled at runtime). Platform icons are produced by `flutter_launcher_icons`:
+
+```sh
+ICON_DIR=assets/icon python tool/gen_icon.py   # regenerate source art
+dart run flutter_launcher_icons                # regenerate all platform icons
+```
+
+Config lives in `pubspec.yaml` under `flutter_launcher_icons:` (Android adaptive
++ legacy, iOS, web, windows, macos). iOS uses `remove_alpha_ios: true`; the
+source `icon.png` is a full opaque square.
+
+### Android release signing
+
+`android/app/build.gradle.kts` reads `android/key.properties` when present and
+signs release with that upload keystore; without it, release falls back to debug
+signing so `flutter run --release` still works. `key.properties`, `*.jks`,
+`*.keystore` are gitignored. To set up a real signing key, copy
+`android/key.properties.example` → `android/key.properties` and create the
+keystore (the developer owns the passwords — don't create/commit them for them):
+
+```sh
+keytool -genkey -v -keystore upload-keystore.jks -storetype JKS \
+  -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
 
 ### Windows build gotcha (important)
 
@@ -101,7 +137,7 @@ there is no imported/copyrighted audio.
 
 ## Not done yet / ideas
 
-- No custom launcher icon or app display name yet (still "classic_lines").
-- No release signing config.
+- No actual upload keystore committed by design — the developer must create
+  `android/key.properties` + `.jks` before a store build (see above).
 - Possible polish: spawn "drop" tick, score-clear particles, an undo that
   refuses to claw back a scoring move (current undo is a full rollback).

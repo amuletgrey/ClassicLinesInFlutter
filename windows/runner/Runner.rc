@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.classiclines" "\0"
-            VALUE "FileDescription", "classic_lines" "\0"
+            VALUE "CompanyName", "classicdeveloper18@gmail.com" "\0"
+            VALUE "FileDescription", "Classic Lines" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "classic_lines" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.classiclines. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 classicdeveloper18@gmail.com. All rights reserved." "\0"
             VALUE "OriginalFilename", "classic_lines.exe" "\0"
-            VALUE "ProductName", "classic_lines" "\0"
+            VALUE "ProductName", "Classic Lines" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
