@@ -204,6 +204,40 @@ class Board {
     }
   }
 
+  /// Serializes the whole game so it can be saved and resumed later.
+  Map<String, dynamic> toJson() => {
+        'size': size,
+        'minLine': minLine,
+        'cells': _cells,
+        'score': score,
+        'over': isGameOver,
+        'planned': plannedCount,
+        'nextColors': nextColors,
+        'nextCells': nextCells.map((c) => [c.x, c.y]).toList(),
+      };
+
+  /// Rebuilds a board from [toJson]. Missing/short lists are tolerated.
+  factory Board.fromJson(Map<String, dynamic> j) {
+    final b = Board(size: j['size'] as int, minLine: j['minLine'] as int);
+    final cells = (j['cells'] as List).cast<int>();
+    for (var i = 0; i < b._cells.length && i < cells.length; i++) {
+      b._cells[i] = cells[i];
+    }
+    b.score = j['score'] as int;
+    b.isGameOver = j['over'] as bool;
+    b.plannedCount = j['planned'] as int;
+    final nc = (j['nextColors'] as List).cast<int>();
+    for (var i = 0; i < b.nextColors.length && i < nc.length; i++) {
+      b.nextColors[i] = nc[i];
+    }
+    final ncell = j['nextCells'] as List;
+    for (var i = 0; i < b.nextCells.length && i < ncell.length; i++) {
+      final pair = (ncell[i] as List).cast<int>();
+      b.nextCells[i] = Point(pair[0], pair[1]);
+    }
+    return b;
+  }
+
   // Line directions: right, up, up-right, up-left. A run is only counted from the
   // cell with no same-colored neighbour behind it, so each run is scored once.
   static const _lineDx = [1, 0, 1, -1];

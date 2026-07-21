@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -24,7 +25,8 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
+class _GameScreenState extends State<GameScreen>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   // ---- Config (the four combinations each keep their own high score) ----
   int _minLine = 5; // 4 = Easy, 5 = Normal
   int _boardSize = 9; // 9 or 10
@@ -32,6 +34,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   late Board _board;
   SharedPreferences? _prefs;
   int _best = 0;
+  bool _ready = false; // false until prefs are loaded and the board exists
+
+  static const _kMinLine = 'cfg_minLine';
+  static const _kBoardSize = 'cfg_boardSize';
+  static const _kSave = 'save_state';
 
   // ---- Interaction / animation state ----
   Cell? _selected;
@@ -56,6 +63,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _moveCtrl = AnimationController(vsync: this);
     _fxCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
     _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
@@ -63,36 +71,83 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       ..addStatusListener((s) {
         if (s == AnimationStatus.completed && mounted) setState(() => _scorePopup = null);
       });
+    _init();
+  }
 
-    _board = Board(size: _boardSize, minLine: _minLine);
-    final spawned = _board.newGame();
-    // Mark them as popping in from scale 0 so the very first frame doesn't flash
-    // them at full size before the animation starts.
-    _fxMode = 'spawn';
-    _fxCells = spawned.toSet();
+  /// Loads prefs, then either resumes the saved game or starts a fresh one in
+  /// the last-used mode/size.
+  Future<void> _init() async {
+    final p = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    _prefs = p;
+    _muted = p.getBool('muted') ?? false;
+    _minLine = p.getInt(_kMinLine) ?? 5;
+    _boardSize = p.getInt(_kBoardSize) ?? 9;
+    _sfx.init(muted: _muted);
 
-    SharedPreferences.getInstance().then((p) {
-      if (!mounted) return;
-      setState(() {
-        _prefs = p;
-        _best = p.getInt(_bestKey) ?? 0;
-        _muted = p.getBool('muted') ?? false;
-      });
-      _sfx.init(muted: _muted);
-    });
+    Board? resumed;
+    final saved = p.getString(_kSave);
+    if (saved != null) {
+      try {
+        final b = Board.fromJson(jsonDecode(saved) as Map<String, dynamic>);
+        if (!b.isGameOver) resumed = b; // never resume into a finished game
+      } catch (_) {
+        // Corrupt/incompatible save — ignore and start fresh.
+      }
+    }
 
-    // Pop the opening balls in once the first frame is laid out.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _playSpawn(spawned));
+    if (resumed != null) {
+      _board = resumed;
+      _minLine = _board.minLine;
+      _boardSize = _board.size;
+      _best = p.getInt(_bestKey) ?? 0;
+      setState(() => _ready = true);
+    } else {
+      _board = Board(size: _boardSize, minLine: _minLine);
+      final spawned = _board.newGame();
+      _best = p.getInt(_bestKey) ?? 0;
+      // Pop the opening balls in from scale 0 (no full-size flash first).
+      _fxMode = 'spawn';
+      _fxCells = spawned.toSet();
+      setState(() => _ready = true);
+      _persist();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _playSpawn(spawned));
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _moveCtrl.dispose();
     _fxCtrl.dispose();
     _pulseCtrl.dispose();
     _popupCtrl.dispose();
     _sfx.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Save when leaving the foreground (also fires as the app is closed). Skip
+    // mid-animation: the end-of-turn save already holds the last stable state.
+    if (!_busy &&
+        (state == AppLifecycleState.paused ||
+            state == AppLifecycleState.hidden ||
+            state == AppLifecycleState.detached)) {
+      _persist();
+    }
+  }
+
+  /// Persists the in-progress board so it can be resumed. Clears the save once
+  /// the game is over so the next launch starts fresh.
+  void _persist() {
+    final p = _prefs;
+    if (p == null || !_ready) return;
+    if (_board.isGameOver) {
+      p.remove(_kSave);
+    } else {
+      p.setString(_kSave, jsonEncode(_board.toJson()));
+    }
   }
 
   void _toggleMute() {
@@ -129,7 +184,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       _busy = true;
       _best = _prefs?.getInt(_bestKey) ?? 0;
     });
+    // Remember the chosen mode/size for the next launch.
+    _prefs?.setInt(_kMinLine, _minLine);
+    _prefs?.setInt(_kBoardSize, _boardSize);
     final spawned = _board.newGame();
+    _persist();
     await _playSpawn(spawned);
     if (mounted) setState(() => _busy = false);
   }
@@ -150,6 +209,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       _scorePopup = null;
       _gameOverAnnounced = false;
     });
+    _persist();
   }
 
   // ------------------------------------------------------------------- input
@@ -230,6 +290,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     }
 
     if (mounted) setState(() => _busy = false);
+    _persist(); // save the resolved turn (or clear the save if it ended)
 
     if (_board.isGameOver && !_gameOverAnnounced) {
       _gameOverAnnounced = true;
@@ -269,6 +330,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   // ------------------------------------------------------------------- render
   @override
   Widget build(BuildContext context) {
+    if (!_ready) {
+      // Brief: prefs load in milliseconds. Just the dark background, no flash.
+      return const Scaffold(backgroundColor: Palette.background);
+    }
     return Scaffold(
       backgroundColor: Palette.background,
       body: SafeArea(

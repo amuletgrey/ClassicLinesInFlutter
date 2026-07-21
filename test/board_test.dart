@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:classic_lines/board.dart';
@@ -131,5 +132,30 @@ void main() {
     for (var x = 0; x < 4; x++) {
       expect(b.get(x, 0), 0);
     }
+  });
+
+  test('toJson/fromJson round-trips the full game (resume)', () {
+    final b = Board(size: 10, minLine: 4);
+    b.newGame();
+    b.place(const Point(2, 3), 5);
+    b.place(const Point(7, 8), 6);
+
+    final restored = Board.fromJson(
+        jsonDecode(jsonEncode(b.toJson())) as Map<String, dynamic>);
+
+    expect(restored.size, 10);
+    expect(restored.minLine, 4);
+    expect(restored.score, b.score);
+    expect(restored.isGameOver, b.isGameOver);
+    expect(restored.plannedCount, b.plannedCount);
+    expect(restored.get(2, 3), 5);
+    expect(restored.get(7, 8), 6);
+    for (var y = 0; y < 10; y++) {
+      for (var x = 0; x < 10; x++) {
+        expect(restored.get(x, y), b.get(x, y));
+      }
+    }
+    expect(restored.nextColors, b.nextColors);
+    expect(restored.nextCells, b.nextCells);
   });
 }

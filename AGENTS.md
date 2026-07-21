@@ -24,7 +24,8 @@ porting more from it, read `../ClassicLinesGame/Assets/Scripts/Board.cs` and
 
 ```
 lib/board.dart        Pure rules — no Flutter. Grid, BFS pathfinding, line
-                      detection, scoring, and snapshot()/restore() for undo.
+                      detection, scoring, snapshot()/restore() (undo), and
+                      toJson()/fromJson() (save/resume).
 lib/game_screen.dart  All UI + orchestration: rendering, input, the move/spawn/
                       clear/pulse/popup animations, controls, persistence, audio.
 lib/ball.dart         The shaded ball (radial gradient lit from upper-left).
@@ -49,6 +50,15 @@ All orientations are enabled so tablets aren't letterboxed.
 Turn flow (`_handleMove`): snapshot for undo → animate slide → commit move →
 if it forms a line, clear + score (free turn); else drop 3 balls, then clear any
 line the drop completed. A clearing move does **not** spawn.
+
+Persistence (`shared_preferences`, keyed in `_GameScreenState`): mute; per-combo
+high scores (`hi_{easy|normal}_{9|10}`); last mode/size (`cfg_minLine`,
+`cfg_boardSize`); and the full in-progress board (`save_state`, via
+`Board.toJson`). `_init()` runs async on startup — it resumes `save_state`
+unless the game was over, else starts fresh in the last mode/size; `build()`
+shows a bare dark screen until `_ready`. `_persist()` fires after each turn, on
+new game / undo, and on `AppLifecycleState.paused|hidden|detached`; it removes
+`save_state` once the game is over so the next launch starts clean.
 
 ## Rules that must not drift
 

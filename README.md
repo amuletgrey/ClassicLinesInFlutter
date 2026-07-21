@@ -50,6 +50,14 @@ Two controls sit next to **New game**:
 Changing either starts a fresh game in that configuration. Each of the four
 combinations keeps its own high score (persisted with `shared_preferences`).
 
+## Saving & resuming
+
+The app remembers your last-used mode and board size, and it saves the full
+in-progress game (every ball, the score, and the upcoming drops) when it leaves
+the foreground and after each move. Reopen it and you pick up exactly where you
+left off — **unless the previous game was over**, in which case it starts a
+fresh game in your last-used mode/size. All persisted with `shared_preferences`.
+
 ## Layout
 
 ```
