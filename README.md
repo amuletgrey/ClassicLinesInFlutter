@@ -50,6 +50,21 @@ Two controls sit next to **New game**:
 Changing either starts a fresh game in that configuration. Each of the four
 combinations keeps its own high score (persisted with `shared_preferences`).
 
+## Color palettes
+
+Three ball palettes, picked with the three-button control under the settings —
+no labels, each button just shows a pile of balls in its own colors:
+
+| Palette | Look |
+|---|---|
+| **Classic** | The original vibrant set, shared with the Unity build. |
+| **Neon** | Bright, electric, high-saturation hues that glow on the dark board. |
+| **High contrast** | Saturated RGB primaries + secondaries plus white, for maximum separation. |
+
+Switching a palette **never resets the game** — the board stores color *indices*
+(1..7), so a palette change only remaps how the existing balls are painted. The
+choice is remembered across launches.
+
 ## Saving & resuming
 
 The app remembers your last-used mode and board size, and it saves the full
@@ -135,6 +150,11 @@ GitHub Actions workflows in `.github/workflows/`:
   drives**, Kotlin's incremental compiler crashes relativizing plugin source
   paths across the two roots (`this and base files have different roots`).
   Harmless on single-drive setups.
+- **Rendering** — the app forces the **Skia** renderer (Impeller disabled via
+  `io.flutter.embedding.android.EnableImpeller=false` in the manifest). Impeller's
+  Vulkan/GLES path crashes on older GPUs (e.g. Galaxy S5 / Adreno 330); Skia runs
+  everywhere. Note: Flutter has deprecated this opt-out, so revisit it when
+  bumping the Flutter version.
 - **Windows** — `flutter build windows --release` needs **Developer Mode**
   enabled (for plugin symlinks): `start ms-settings:developers`. CI runners
   already have it.

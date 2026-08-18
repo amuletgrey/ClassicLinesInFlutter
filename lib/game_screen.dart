@@ -38,7 +38,13 @@ class _GameScreenState extends State<GameScreen>
 
   static const _kMinLine = 'cfg_minLine';
   static const _kBoardSize = 'cfg_boardSize';
+  static const _kPalette = 'cfg_palette';
   static const _kSave = 'save_state';
+
+  /// Which ball palette is active. Purely cosmetic — the board stores color
+  /// indices, so switching repaints the balls without disturbing the game.
+  int _paletteIndex = 0;
+  List<Color> get _ballColors => Palette.ballPalettes[_paletteIndex].colors;
 
   // ---- Interaction / animation state ----
   Cell? _selected;
@@ -83,6 +89,8 @@ class _GameScreenState extends State<GameScreen>
     _muted = p.getBool('muted') ?? false;
     _minLine = p.getInt(_kMinLine) ?? 5;
     _boardSize = p.getInt(_kBoardSize) ?? 9;
+    _paletteIndex =
+        (p.getInt(_kPalette) ?? 0).clamp(0, Palette.ballPalettes.length - 1);
     _sfx.init(muted: _muted);
 
     Board? resumed;
@@ -154,6 +162,15 @@ class _GameScreenState extends State<GameScreen>
     setState(() => _muted = !_muted);
     _sfx.muted = _muted;
     _prefs?.setBool('muted', _muted);
+  }
+
+  /// Repaints the balls in a different palette. Deliberately does not touch
+  /// `_board`, so the game in progress carries on untouched.
+  void _setPalette(int index) {
+    if (index == _paletteIndex) return;
+    HapticFeedback.selectionClick();
+    setState(() => _paletteIndex = index);
+    _prefs?.setInt(_kPalette, index);
   }
 
   String get _bestKey => 'hi_${_minLine == 4 ? 'easy' : 'normal'}_$_boardSize';
@@ -474,7 +491,7 @@ class _GameScreenState extends State<GameScreen>
             for (var i = 0; i < _board.plannedCount; i++)
               Padding(
                 padding: const EdgeInsets.only(left: 6),
-                child: Ball(color: Palette.ballColors[_board.nextColors[i]], diameter: 20),
+                child: Ball(color: _ballColors[_board.nextColors[i]], diameter: 20),
               ),
           ],
         ),
@@ -526,31 +543,98 @@ class _GameScreenState extends State<GameScreen>
   }
 
   Widget _controls() {
-    return Row(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: 116,
-          child: _actionButton(label: 'New game', filled: true, height: 76, onTap: () => _newGame()),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            children: [
-              _segmented(
-                value: _minLine,
-                options: const [MapEntry('Easy', 4), MapEntry('Normal', 5)],
-                onChanged: (v) => _newGame(minLine: v),
+        Row(
+          children: [
+            SizedBox(
+              width: 116,
+              child:
+                  _actionButton(label: 'New game', filled: true, height: 76, onTap: () => _newGame()),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                children: [
+                  _segmented(
+                    value: _minLine,
+                    options: const [MapEntry('Easy', 4), MapEntry('Normal', 5)],
+                    onChanged: (v) => _newGame(minLine: v),
+                  ),
+                  const SizedBox(height: 8),
+                  _segmented(
+                    value: _boardSize,
+                    options: const [MapEntry('9×9', 9), MapEntry('10×10', 10)],
+                    onChanged: (v) => _newGame(boardSize: v),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              _segmented(
-                value: _boardSize,
-                options: const [MapEntry('9×9', 9), MapEntry('10×10', 10)],
-                onChanged: (v) => _newGame(boardSize: v),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
+        const SizedBox(height: 8),
+        _paletteRow(),
       ],
+    );
+  }
+
+  /// Palette picker: one button per palette, each showing a pile of balls in
+  /// that palette's colors. No labels — the samples are the label.
+  Widget _paletteRow() {
+    return Container(
+      height: 46,
+      decoration: BoxDecoration(
+        color: Palette.boardPanel,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      padding: const EdgeInsets.all(3),
+      child: Row(
+        children: [
+          for (var i = 0; i < Palette.ballPalettes.length; i++)
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _setPalette(i),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  margin: EdgeInsets.only(left: i == 0 ? 0 : 3),
+                  decoration: BoxDecoration(
+                    color: i == _paletteIndex
+                        ? Palette.accent.withValues(alpha: 0.25)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: i == _paletteIndex ? Palette.accent : Colors.transparent,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Center(child: _ballPile(Palette.ballPalettes[i].colors)),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// A small heap of balls — three across the bottom, two nestled on top.
+  Widget _ballPile(List<Color> colors) {
+    const d = 15.0;
+    return SizedBox(
+      width: d * 2.7,
+      height: d * 1.55,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Bottom row first so the top row overlaps it.
+          Positioned(left: 0, top: d * 0.55, child: Ball(color: colors[1], diameter: d)),
+          Positioned(left: d * 0.85, top: d * 0.55, child: Ball(color: colors[2], diameter: d)),
+          Positioned(left: d * 1.70, top: d * 0.55, child: Ball(color: colors[3], diameter: d)),
+          Positioned(left: d * 0.42, top: 0, child: Ball(color: colors[4], diameter: d)),
+          Positioned(left: d * 1.27, top: 0, child: Ball(color: colors[6], diameter: d)),
+        ],
+      ),
     );
   }
 
@@ -704,7 +788,7 @@ class _GameScreenState extends State<GameScreen>
         child: Center(
           child: Opacity(
             opacity: 0.55,
-            child: Ball(color: Palette.ballColors[_board.nextColors[i]], diameter: cell * 0.24),
+            child: Ball(color: _ballColors[_board.nextColors[i]], diameter: cell * 0.24),
           ),
         ),
       ));
@@ -735,7 +819,7 @@ class _GameScreenState extends State<GameScreen>
           child: Center(
             child: Transform.scale(
               scale: scale,
-              child: Ball(color: Palette.ballColors[color], diameter: ballSize),
+              child: Ball(color: _ballColors[color], diameter: ballSize),
             ),
           ),
         ));
@@ -758,7 +842,7 @@ class _GameScreenState extends State<GameScreen>
         width: cell,
         height: cell,
         child: Center(
-          child: Ball(color: Palette.ballColors[_moving!.color], diameter: ballSize),
+          child: Ball(color: _ballColors[_moving!.color], diameter: ballSize),
         ),
       ));
     }

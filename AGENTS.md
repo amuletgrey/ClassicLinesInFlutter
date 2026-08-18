@@ -29,7 +29,8 @@ lib/board.dart        Pure rules — no Flutter. Grid, BFS pathfinding, line
 lib/game_screen.dart  All UI + orchestration: rendering, input, the move/spawn/
                       clear/pulse/popup animations, controls, persistence, audio.
 lib/ball.dart         The shaded ball (radial gradient lit from upper-left).
-lib/palette.dart      Flat dark palette + the 7 ball colors (index 1..7).
+lib/palette.dart      Flat dark UI colors + three BallPalettes (classic / neon /
+                      contrast), each 7 ball colors at index 1..7.
 lib/sfx.dart          Mute-aware SFX player; one low-latency AudioPlayer per sound.
 lib/main.dart         App entry, dark theme, all orientations enabled.
 tool/gen_sounds.py    Synthesizes assets/sounds/*.wav (pure-Python, no numpy).
@@ -47,13 +48,25 @@ header, board, controls stacked, capped at 560 wide) or `_wideLayout`
 (landscape/large — board square on the left, header+controls in a side panel).
 All orientations are enabled so tablets aren't letterboxed.
 
+Renderer: **Impeller is disabled** (`io.flutter.embedding.android.EnableImpeller`
+= `false` in AndroidManifest.xml) so the app uses Skia. Impeller's Vulkan/GLES
+path crashes on old GPUs (Galaxy S5 / Adreno 330, and the CI emulator); Skia runs
+everywhere. Flutter has deprecated this opt-out and logs a warning at launch —
+harmless on 3.44.6, but revisit when upgrading Flutter. (This is also why the
+CI/emulator verifications used `--no-enable-impeller`; now it's baked in.)
+
 Turn flow (`_handleMove`): snapshot for undo → animate slide → commit move →
 if it forms a line, clear + score (free turn); else drop 3 balls, then clear any
 line the drop completed. A clearing move does **not** spawn.
 
+Ball palettes: `Palette.ballPalettes` holds three `BallPalette`s; the active one
+is `_paletteIndex` and every render site reads `_ballColors[...]`. The board only
+ever stores color **indices**, so `_setPalette` is a pure repaint — it must never
+touch `_board` (switching palettes must not reset or disturb a game in progress).
+
 Persistence (`shared_preferences`, keyed in `_GameScreenState`): mute; per-combo
 high scores (`hi_{easy|normal}_{9|10}`); last mode/size (`cfg_minLine`,
-`cfg_boardSize`); and the full in-progress board (`save_state`, via
+`cfg_boardSize`); palette (`cfg_palette`); and the full in-progress board (`save_state`, via
 `Board.toJson`). `_init()` runs async on startup — it resumes `save_state`
 unless the game was over, else starts fresh in the last mode/size; `build()`
 shows a bare dark screen until `_ready`. `_persist()` fires after each turn, on
