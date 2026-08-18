@@ -30,6 +30,12 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Force the Skia renderer instead of Impeller. Impeller's Vulkan/GLES
+             path crashes on older GPUs (e.g. Galaxy S5 / Adreno 330), so we opt
+             out for broad device compatibility. Skia works everywhere. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
