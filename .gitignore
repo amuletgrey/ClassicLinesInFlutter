@@ -126,3 +126,6 @@ app.*.symbols
 android/key.properties
 *.jks
 *.keystore
+
+# Local build artifacts dropped here manually (APK/AAB)
+Download/
