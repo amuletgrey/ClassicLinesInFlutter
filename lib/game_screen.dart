@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ball.dart';
 import 'board.dart';
+import 'info.dart';
 import 'palette.dart';
 import 'sfx.dart';
 
@@ -61,6 +62,8 @@ class _GameScreenState extends State<GameScreen>
   bool _muted = false;
   bool _gameOverAnnounced = false; // so the game-over sound only plays once
 
+  String _policyText = 'Loading…'; // bundled privacy policy, loaded in _init
+
   late final AnimationController _moveCtrl;
   late final AnimationController _fxCtrl;
   late final AnimationController _pulseCtrl;
@@ -92,6 +95,12 @@ class _GameScreenState extends State<GameScreen>
     _paletteIndex =
         (p.getInt(_kPalette) ?? 0).clamp(0, Palette.ballPalettes.length - 1);
     _sfx.init(muted: _muted);
+
+    try {
+      _policyText = await rootBundle.loadString('assets/legal/privacy_policy.txt');
+    } catch (_) {
+      _policyText = 'The privacy policy could not be loaded.';
+    }
 
     Board? resumed;
     final saved = p.getString(_kSave);
@@ -575,7 +584,88 @@ class _GameScreenState extends State<GameScreen>
         ),
         const SizedBox(height: 8),
         _paletteRow(),
+        const SizedBox(height: 4),
+        _infoRow(),
       ],
+    );
+  }
+
+  /// Footer links that open info popups. Privacy is required by the app stores;
+  /// Help and About are convenience.
+  Widget _infoRow() {
+    Widget dot() => const Text('·',
+        style: TextStyle(color: Palette.textDim, fontSize: 13, fontWeight: FontWeight.w700));
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _infoButton('Privacy', () => _showInfoDialog('Privacy Policy', _policyText)),
+        dot(),
+        _infoButton('Help', () => _showInfoDialog('How to Play', Info.help)),
+        dot(),
+        _infoButton('About', () => _showInfoDialog('About', Info.about)),
+      ],
+    );
+  }
+
+  Widget _infoButton(String label, VoidCallback onTap) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(6),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Text(label,
+            style: const TextStyle(
+                color: Palette.textDim, fontSize: 12.5, fontWeight: FontWeight.w600)),
+      ),
+    );
+  }
+
+  /// A scrollable, dismissable popup for a block of text (policy / help / about).
+  Future<void> _showInfoDialog(String title, String body) {
+    return showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Palette.boardPanel,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 44),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+                child: Text(title,
+                    style: const TextStyle(
+                        color: Palette.text, fontSize: 18, fontWeight: FontWeight.w700)),
+              ),
+              Flexible(
+                child: Scrollbar(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                    child: SelectableText(
+                      body,
+                      style: const TextStyle(color: Palette.textDim, fontSize: 13, height: 1.5),
+                    ),
+                  ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 2, 12, 10),
+                  child: TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Close',
+                        style: TextStyle(color: Palette.accent, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

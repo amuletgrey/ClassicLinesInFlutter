@@ -1,0 +1,86 @@
+PRIVACY POLICY
+
+Effective Date: 2026-09-02
+Last Updated: 2026-09-02
+
+This Privacy Policy applies to the games developed and published by Max Cavrilon
+("I," "me," or "my") as a personal, independent developer (collectively, the
+"Games"). It explains my approach to your privacy. In short: my Games do not
+collect, store, sell, or share any personal data about you.
+
+-------------------------------------------------------------------------------
+1. NO DATA COLLECTION
+-------------------------------------------------------------------------------
+My Games are designed to work without collecting any personal information. My
+Games do not:
+
+  - Require you to create an account or sign in.
+  - Ask for your name, email address, phone number, or other contact details.
+  - Collect, log, or store your IP address or location.
+  - Contain third-party analytics or tracking (such as Google Analytics).
+  - Contain third-party advertising or advertising identifiers.
+  - Sell, rent, trade, or share any information with third parties.
+  - Track you across other apps, games, or websites, or build a profile of you.
+
+-------------------------------------------------------------------------------
+2. INFORMATION I DO NOT COLLECT
+-------------------------------------------------------------------------------
+Because the Games are built to run without personal data, I never collect:
+
+  - Contact details (name, email, phone number, address).
+  - Account credentials or login information.
+  - Payment or financial information.
+  - Precise or approximate location data.
+  - Device identifiers or advertising IDs.
+  - Gameplay analytics, usage patterns, or behavioral data tied to you.
+
+-------------------------------------------------------------------------------
+3. DATA STORED ON YOUR DEVICE
+-------------------------------------------------------------------------------
+My Games may save information such as game progress, settings, and high scores
+locally on your device so the Games work as expected. This data stays on your
+device, is not transmitted to me or to anyone else, and is removed if you delete
+the Game or clear its data.
+
+-------------------------------------------------------------------------------
+4. APP STORES AND PLATFORMS
+-------------------------------------------------------------------------------
+You may download my Games through a platform or app store (such as the Apple App
+Store, Google Play, or another distributor). Those platforms may collect
+information under their own privacy policies when you download or purchase a
+Game — for example, to process a purchase or provide aggregate download
+statistics. I do not control and am not responsible for the platforms' data
+practices, and I do not receive any personal data from them beyond anonymous,
+aggregated figures the platform may show me. Please review the privacy policy of
+the platform you use.
+
+-------------------------------------------------------------------------------
+5. CHILDREN'S PRIVACY
+-------------------------------------------------------------------------------
+Because I collect no personal information from anyone, I do not knowingly collect
+personal information from children of any age. My Games are safe to play without
+any personal data being gathered.
+
+-------------------------------------------------------------------------------
+6. YOUR RIGHTS
+-------------------------------------------------------------------------------
+Privacy laws such as the GDPR (EU/UK) and CCPA/CPRA (California) grant rights to
+access, correct, or delete personal data. Because I hold no personal data about
+you, there is nothing for me to access, correct, delete, or export. You are
+protected by design.
+
+-------------------------------------------------------------------------------
+7. CHANGES TO THIS POLICY
+-------------------------------------------------------------------------------
+If my practices ever change and a Game begins collecting any personal data, I
+will update this Policy, revise the "Last Updated" date, and provide notice
+before the change takes effect. Continued use of a Game after changes become
+effective constitutes acceptance of the updated Policy.
+
+-------------------------------------------------------------------------------
+8. CONTACT
+-------------------------------------------------------------------------------
+If you have any questions about this Privacy Policy, contact me at:
+
+  Max Cavrilon (independent developer)
+  Email: maxcavrilon@gmail.com

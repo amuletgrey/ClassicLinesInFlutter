@@ -107,12 +107,17 @@ GitHub remote is `github.com/amuletgrey/ClassicLinesInFlutter`.
 ## Identity & release config
 
 - **Display name:** `Classic Lines` (all platforms).
-- **Application ID / bundle id:** `com.classicdeveloper.classiclines` — set on
+- **Application ID / bundle id:** `com.maxcavrilon.classiclines` — set on
   Android (`applicationId`), iOS/macOS (bundle id), Linux (`APPLICATION_ID`). The
   Android `namespace` deliberately stays `com.classiclines.classic_lines` (it's
   the R-class package and can differ from the applicationId; changing it would
-  mean moving `MainActivity.kt`). Owner: classicdeveloper18@gmail.com.
-- **Version:** `pubspec.yaml` `version:` → `versionName+versionCode`.
+  mean moving `MainActivity.kt`). Developer: **Max Cavrilon**,
+  `maxcavrilon@gmail.com` (in the macOS/Windows copyright and the in-app About).
+- **Version:** `pubspec.yaml` `version:` → `versionName+versionCode`. Also
+  mirrored in `Info.version` (`lib/info.dart`) for the About dialog — bump both.
+- **In-app info:** footer links (Privacy / Help / About) in `_infoRow` open
+  `_showInfoDialog`. Privacy loads `assets/legal/privacy_policy.txt` (a
+  zero-collection policy required by Play); Help/About come from `lib/info.dart`.
 
 ### Launcher icon
 
